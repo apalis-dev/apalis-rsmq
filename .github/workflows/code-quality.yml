@@ -1,0 +1,95 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run weekly on Sundays at 05:00 UTC
+    - cron: '0 5 * * 0'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  unused-dependencies:
+    name: Check Unused Dependencies
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@nightly
+
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+
+    - name: Install cargo-machete
+      run: cargo install cargo-machete
+
+    - name: Check for unused dependencies
+      run: cargo machete
+
+  semver-checks:
+    name: Semantic Versioning Checks
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+
+    - name: Install cargo-semver-checks
+      run: cargo install cargo-semver-checks
+
+    - name: Check semver compatibility
+      run: cargo semver-checks check-release
+
+  bloat-check:
+    name: Binary Size Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+
+    - name: Install cargo-bloat
+      run: cargo install cargo-bloat
+
+    - name: Analyze binary bloat
+      run: cargo bloat --release --crates
+
+  duplicate-check:
+    name: Check Duplicate Dependencies
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+
+    - name: Install cargo-duplicate
+      run: cargo install cargo-duplicate
+
+    - name: Check for duplicate dependencies
+      run: cargo duplicate

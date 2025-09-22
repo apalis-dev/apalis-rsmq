@@ -1,0 +1,103 @@
+name: Semantic Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  release:
+    name: Semantic Release
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+
+    - name: Install cargo-release
+      run: cargo install cargo-release
+
+    - name: Configure Git
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+    - name: Determine version bump
+      id: version
+      run: |
+        # Get the latest tag
+        LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+        echo "Latest tag: $LATEST_TAG"
+        
+        # Get commits since last tag
+        COMMITS=$(git log ${LATEST_TAG}..HEAD --oneline)
+        echo "Commits since last tag:"
+        echo "$COMMITS"
+        
+        # Determine version bump based on conventional commits
+        if echo "$COMMITS" | grep -q "^[a-f0-9]\+ \(BREAKING CHANGE\|feat!\|fix!\|chore!\)"; then
+          echo "bump=major" >> $GITHUB_OUTPUT
+          echo "Detected breaking changes - major version bump"
+        elif echo "$COMMITS" | grep -q "^[a-f0-9]\+ feat"; then
+          echo "bump=minor" >> $GITHUB_OUTPUT
+          echo "Detected new features - minor version bump"
+        elif echo "$COMMITS" | grep -q "^[a-f0-9]\+ \(fix\|docs\|style\|refactor\|perf\|test\|chore\)"; then
+          echo "bump=patch" >> $GITHUB_OUTPUT
+          echo "Detected fixes/improvements - patch version bump"
+        else
+          echo "bump=none" >> $GITHUB_OUTPUT
+          echo "No significant changes detected - no version bump"
+        fi
+
+    - name: Release
+      if: steps.version.outputs.bump != 'none'
+      run: |
+        case "${{ steps.version.outputs.bump }}" in
+          major)
+            cargo release major --execute --no-confirm
+            ;;
+          minor)
+            cargo release minor --execute --no-confirm
+            ;;
+          patch)
+            cargo release patch --execute --no-confirm
+            ;;
+        esac
+      env:
+        CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
+
+    - name: Create GitHub Release
+      if: steps.version.outputs.bump != 'none'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const { execSync } = require('child_process');
+          
+          // Get the new version
+          const newTag = execSync('git describe --tags --abbrev=0').toString().trim();
+          const version = newTag.replace('v', '');
+          
+          // Get changelog since last release
+          const previousTag = execSync('git describe --tags --abbrev=0 HEAD^').toString().trim();
+          const commits = execSync(`git log ${previousTag}..${newTag} --oneline`).toString().trim();
+          
+          // Create release
+          await github.rest.repos.createRelease({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            tag_name: newTag,
+            name: `Release ${version}`,
+            body: `## Changes\n\n${commits}`,
+            draft: false,
+            prerelease: version.includes('alpha') || version.includes('beta') || version.includes('rc')
+          });

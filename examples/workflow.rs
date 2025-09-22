@@ -4,7 +4,7 @@ use apalis_core::{
     error::BoxDynError,
     worker::{builder::WorkerBuilder, context::WorkerContext},
 };
-use apalis_rsmq::{RedisMq, Config};
+use apalis_rsmq::{Config, RedisMq};
 use apalis_workflow::{TaskFlowSink, WorkFlow};
 use rsmq_async::RsmqConnection;
 

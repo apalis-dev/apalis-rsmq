@@ -1,0 +1,20 @@
+# Clippy configuration file
+msrv = "1.75.0"
+
+# Allow certain lints that might be too pedantic for this project
+allow-expect-in-tests = true
+allow-unwrap-in-tests = true
+
+# Disallow certain patterns
+disallowed-methods = [
+    "std::collections::HashMap::new",  # prefer FxHashMap for performance
+    "std::collections::HashSet::new",  # prefer FxHashSet for performance
+]
+
+# Set limits
+too-many-arguments-threshold = 7
+type-complexity-threshold = 250
+trivial-copy-size-limit = 64
+
+# Documentation
+missing-docs-in-crate-items = true

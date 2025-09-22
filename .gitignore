@@ -21,5 +21,29 @@ Cargo.lock
 #.idea/
 
 # Added by cargo
-
 /target
+
+# Benchmark results
+criterion_outputs/
+
+# Coverage reports
+cobertura.xml
+tarpaulin-report.html
+
+# Dependency updates
+Cargo.lock.bak
+
+# IDE files
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

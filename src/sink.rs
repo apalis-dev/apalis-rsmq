@@ -1,5 +1,6 @@
 use std::{
     collections::VecDeque,
+    future::Future,
     pin::Pin,
     task::{Context, Poll},
     time::Duration,
@@ -10,7 +11,7 @@ use chrono::{TimeZone, Utc};
 use futures::{FutureExt, Sink};
 use rsmq_async::{Rsmq, RsmqConnection, RsmqError};
 
-use crate::{PrimitiveMessage, RedisMq, RsMqTask, config::Config};
+use crate::{config::Config, PrimitiveMessage, RedisMq, RsMqTask};
 
 pin_project_lite::pin_project! {
     pub(super) struct RsMqSink<T, C> {

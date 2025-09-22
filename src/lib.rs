@@ -24,25 +24,26 @@ use std::{
     fmt::Debug,
     marker::PhantomData,
     sync::{
-        Arc,
         atomic::{AtomicUsize, Ordering},
+        Arc,
     },
     time::Instant,
 };
 
 use apalis_core::{
     backend::{
-        Backend, TaskStream,
-        codec::{Codec, json::JsonCodec},
+        codec::{json::JsonCodec, Codec},
         poll_strategy::{PollContext, PollStrategyExt},
+        Backend, TaskStream,
     },
     features_table,
-    task::{Task, attempt::Attempt, builder::TaskBuilder, task_id::TaskId},
+    task::{attempt::Attempt, builder::TaskBuilder, task_id::TaskId, Task},
     worker::{context::WorkerContext, ext::ack::AcknowledgeLayer},
 };
 use futures::{
-    StreamExt, future,
+    future,
     stream::{self, BoxStream},
+    StreamExt,
 };
 use rsmq_async::{Rsmq, RsmqConnection, RsmqError};
 use serde::de::DeserializeOwned;
