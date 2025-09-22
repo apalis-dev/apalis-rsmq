@@ -3,6 +3,12 @@ name = "apalis-rsmq"
 version = "0.1.0-alpha.1"
 edition = "2024"
 repository = "https://github.com/apalis-dev/apalis-rsmq"
+authors = ["Njuguna Mureithi <mureithinjuguna@gmail.com>"]
+description = "A redis-backed message queue build with rust, apalis and rsmq-async"
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+keywords = ["redis", "task", "message-queue", "worker"]
+categories = ["database"]
 
 [dependencies]
 apalis-core = { version = "1.0.0-alpha.2", features = ["json", "sleep"] }

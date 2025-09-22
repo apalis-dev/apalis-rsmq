@@ -10,7 +10,7 @@ Redis-based backend for message processing. It uses [`rsmq_async`] for Redis Sim
 - **Configurable Polling**: Adjustable polling intervals.
 - **Automatic Message Processing**: Works with [`Backend`] to process messages asynchronously.
 
-## 📦 Installation
+## Installation
 
 Add this to your `Cargo.toml`:
 
@@ -69,6 +69,6 @@ async fn start_worker(mq: RedisMq<String>) {
 }
 ```
 
-## ⚖️ License
+## License
 
 Licensed under **MIT** or **Apache-2.0**.
