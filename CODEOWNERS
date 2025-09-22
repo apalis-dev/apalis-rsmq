@@ -1,0 +1,22 @@
+# Global owners
+* @njuguna-mureithi
+
+# CI/CD configuration
+/.github/ @njuguna-mureithi
+/deny.toml @njuguna-mureithi
+/release.toml @njuguna-mureithi
+/.clippy.toml @njuguna-mureithi
+/rustfmt.toml @njuguna-mureithi
+
+# Documentation
+/README.md @njuguna-mureithi
+/CONTRIBUTING.md @njuguna-mureithi
+/CHANGELOG.md @njuguna-mureithi
+/SECURITY.md @njuguna-mureithi
+
+# Core library code
+/src/ @njuguna-mureithi
+
+# Examples and benchmarks
+/examples/ @njuguna-mureithi
+/benches/ @njuguna-mureithi

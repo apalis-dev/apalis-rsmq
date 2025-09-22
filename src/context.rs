@@ -1,7 +1,10 @@
 use std::{any::type_name, convert::Infallible};
 
 use apalis_core::{task::metadata::MetadataExt, task_fn::FromRequest};
-use serde::{de::{DeserializeOwned, Error}, Deserialize, Serialize};
+use serde::{
+    de::{DeserializeOwned, Error},
+    Deserialize, Serialize,
+};
 use serde_json::Map;
 
 use crate::RsMqTask;

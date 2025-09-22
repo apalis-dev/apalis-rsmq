@@ -1,10 +1,10 @@
 use std::fmt::Debug;
 
-use crate::{RedisMq, context::RedisMqContext};
+use crate::{context::RedisMqContext, RedisMq};
 use apalis_core::{error::BoxDynError, task::Parts, worker::ext::ack::Acknowledge};
 use futures::{
-    FutureExt,
     future::{self, BoxFuture},
+    FutureExt,
 };
 use rsmq_async::{RsmqConnection, RsmqError};
 
