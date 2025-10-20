@@ -159,15 +159,15 @@ where
         let poll_strategy = self.config.poll_strategy().clone();
         let prev_count = Arc::new(AtomicUsize::new(0));
         let ctx = PollContext::new(worker.clone(), prev_count.clone());
-        let throttle = poll_strategy.build_stream(&ctx);
+        let poll_control = poll_strategy.build_stream(&ctx);
 
-        let stream = futures::stream::unfold(throttle, move |mut throttle| {
+        let stream = futures::stream::unfold(poll_control, move |mut poll_control| {
             let mut conn = self.conn.clone();
             let namespace = self.config.namespace().to_string();
             let prev_count = prev_count.clone();
             async move {
                 let instant = Instant::now();
-                throttle.next().await;
+                poll_control.next().await;
                 trace!("Polling new messages after {:?}", instant.elapsed());
                 match conn.receive_message(&namespace, None).await {
                     Ok(Some(r)) => match C::decode(&r.message) {
@@ -178,20 +178,20 @@ where
                                 .with_attempt(Attempt::new_with_value(r.rc as usize))
                                 .build();
                             prev_count.store(1, Ordering::SeqCst);
-                            Some((Ok(Some(task)), throttle))
+                            Some((Ok(Some(task)), poll_control))
                         }
                         Err(e) => {
                             error!("Failed to decode message: {:?}", e);
-                            Some((Err(RsmqError::InvalidFormat(e.to_string())), throttle))
+                            Some((Err(RsmqError::InvalidFormat(e.to_string())), poll_control))
                         }
                     },
                     Ok(None) => {
                         prev_count.store(0, Ordering::SeqCst);
-                        Some((Ok(None), throttle))
+                        Some((Ok(None), poll_control))
                     }
                     Err(e) => {
                         error!("Error receiving message: {:?}", e);
-                        Some((Err(e), throttle))
+                        Some((Err(e), poll_control))
                     }
                 }
             }
