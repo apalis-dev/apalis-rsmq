@@ -64,7 +64,7 @@ pin_project_lite::pin_project! {
     /// Redis-backed message queue
     ///
     #[doc = features_table! {
-        setup = {
+        setup = r#"{
             use apalis_rsmq::Config;
             use apalis_rsmq::RedisMq;
             use rsmq_async::RsmqConnection;
@@ -75,7 +75,7 @@ pin_project_lite::pin_project! {
             config.set_namespace("test".to_owned());
             let mut mq = RedisMq::new(conn, config);
             mq
-        };,
+        }"#,
         TaskSink => supported("Ability to push new tasks"),
         Serialization => supported("Serialization support for arguments. Accepts any bytes codec", false),
         FetchById => not_implemented("Allow fetching a task by its ID"),
@@ -133,15 +133,16 @@ impl<T, C> Clone for RedisMq<T, C> {
     }
 }
 
-impl<Args, C> Backend<Args> for RedisMq<Args, C>
+impl<Args, C, Err> Backend for RedisMq<Args, C>
 where
     Args: Send + DeserializeOwned + 'static,
-    C: Codec<PrimitiveMessage<Args>, Compact = Vec<u8>>,
-    C::Error: std::error::Error + Send,
+    C: Codec<PrimitiveMessage<Args>, Compact = Vec<u8>, Error = Err>
+        + Codec<Args, Compact = Vec<u8>, Error = Err>,
+    Err: std::error::Error + Send,
 {
+    type Args = Args;
     type Stream = TaskStream<RsMqTask<Args>, RsmqError>;
     type Layer = AcknowledgeLayer<Self>;
-    type Codec = C;
     type Context = RedisMqContext;
     type Error = RsmqError;
     type Beat = BoxStream<'static, Result<(), RsmqError>>;
@@ -171,9 +172,9 @@ where
                 trace!("Polling new messages after {:?}", instant.elapsed());
                 match conn.receive_message(&namespace, None).await {
                     Ok(Some(r)) => match C::decode(&r.message) {
-                        Ok(msg) => {
-                            let task = TaskBuilder::new(msg.task)
-                                .with_ctx(msg.context)
+                        Ok(PrimitiveMessage { task, context }) => {
+                            let task = TaskBuilder::new(task)
+                                .with_ctx(context)
                                 .with_task_id(TaskId::new(r.id))
                                 .with_attempt(Attempt::new_with_value(r.rc as usize))
                                 .build();
@@ -205,4 +206,38 @@ where
 struct PrimitiveMessage<T> {
     task: T,
     context: RedisMqContext,
+}
+
+async fn receive_message<T, C, Err>(
+    conn: &mut Rsmq,
+    namespace: &str,
+) -> Result<Option<PrimitiveMessage<T>>, RsmqError>
+where
+    T: DeserializeOwned,
+    C: Codec<PrimitiveMessage<T>, Compact = Vec<u8>, Error = Err>,
+    Err: std::error::Error + Send,
+{
+    // let timestamp = Utc::now().timestamp();
+    // let script = Script::new(include_str!("../lua/ack_job.lua"));
+    // let mut conn = self.conn.clone();
+
+    // async move {
+    //     let mut script = script.key(inflight_set);
+    //     let _ = script
+    //         .key(done_jobs_set)
+    //         .key(dead_jobs_set)
+    //         .key(job_meta_hash)
+    //         .arg(task_id)
+    //         .arg(timestamp)
+    //         .arg(result_data)
+    //         .arg(status)
+    //         .arg(attempt)
+    //         .invoke_async::<u32>(&mut conn)
+    //         .boxed()
+    //         .await?;
+    //     Ok(())
+    // }
+    // .boxed()
+
+    todo!("Implement receive_message function to fetch messages from Redis")
 }
