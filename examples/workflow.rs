@@ -1,11 +1,9 @@
-use std::time::Duration;
-
 use apalis_core::{
     error::BoxDynError,
     worker::{builder::WorkerBuilder, context::WorkerContext},
 };
-use apalis_rsmq::{RedisMq, Config};
-use apalis_workflow::{TaskFlowSink, WorkFlow};
+use apalis_rsmq::{Config, RedisMq};
+use apalis_workflow::*;
 use rsmq_async::RsmqConnection;
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -41,12 +39,11 @@ async fn main() -> Result<(), rsmq_async::RsmqError> {
     .await
     .unwrap();
 
-    let workflow = WorkFlow::new("email-workflow")
-        .then(send_email)
-        .delay_for(Duration::from_secs(2))
-        .then(|_| async {
-            println!("Done processing workflow");
-        });
+    let workflow = Workflow::new("email-workflow").and_then(send_email);
+    // .delay_for(Duration::from_secs(2))
+    // .then(|_| async {
+    //     println!("Done processing workflow");
+    // });
 
     let worker = WorkerBuilder::new("rango-tango")
         .backend(mq)
