@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- ci(deps): bump actions/upload-artifact from 5 to 7 ([#6](https://github.com/apalis-dev/apalis-rsmq/pull/6))
 ## [0.1.0-rc.1] - 2026-09-29
 
 ### Added
