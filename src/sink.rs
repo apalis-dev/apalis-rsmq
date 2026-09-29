@@ -2,79 +2,107 @@ use std::{
     collections::VecDeque,
     pin::Pin,
     task::{Context, Poll},
-    time::Duration,
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-use apalis_core::backend::codec::Codec;
-use chrono::{TimeZone, Utc};
+use apalis_core::backend::future::BoxSyncFuture;
 use futures::{FutureExt, Sink};
-use rsmq_async::{Rsmq, RsmqConnection, RsmqError};
+use redis::aio::ConnectionLike;
 
-use crate::{PrimitiveMessage, RedisMq, RsMqTask, config::Config};
+use crate::{RedisMq, RsMqTask, State, error::Error};
 
-pin_project_lite::pin_project! {
-    pub(super) struct RsMqSink<T, C> {
-        conn: Rsmq,
-        config: Config,
-        items: VecDeque<RsMqTask<T>>,
-        pending_sends: VecDeque<PendingSend>,
-        _codec: std::marker::PhantomData<C>,
-    }
+pub(super) struct RsMqSink<T> {
+    items: VecDeque<RsMqTask<Vec<u8>>>,
+    pending_sends: VecDeque<BoxSyncFuture<Result<(), Error>>>,
+    _args: std::marker::PhantomData<T>,
 }
-impl<T, C> Clone for RsMqSink<T, C> {
+
+impl<T> Clone for RsMqSink<T> {
     fn clone(&self) -> Self {
         Self {
-            conn: self.conn.clone(),
-            config: self.config.clone(),
             items: VecDeque::new(),
             pending_sends: VecDeque::new(),
-            _codec: std::marker::PhantomData,
+            _args: std::marker::PhantomData,
         }
     }
 }
 
-impl<T, C> std::fmt::Debug for RsMqSink<T, C> {
+impl<T> std::fmt::Debug for RsMqSink<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("RsMqSink")
-            .field("config", &self.config)
             .field("items_len", &self.items.len())
             .field("pending_sends_len", &self.pending_sends.len())
             .finish()
     }
 }
 
-impl<T, C> RsMqSink<T, C> {
-    pub(crate) fn new(conn: Rsmq, config: Config) -> Self {
+impl<T> RsMqSink<T> {
+    pub(crate) fn new() -> Self {
         Self {
-            conn,
-            config,
             items: VecDeque::new(),
             pending_sends: VecDeque::new(),
-            _codec: std::marker::PhantomData,
+            _args: std::marker::PhantomData,
         }
     }
 }
 
-struct PendingSend {
-    future: Pin<Box<dyn Future<Output = Result<String, RsmqError>> + Send + 'static>>,
-}
-// SAFETY: PendingSend contains a Pin<Box<dyn Future + Send>>, which is Send but not Sync.
-unsafe impl Sync for PendingSend {}
-
-impl<T, C> Sink<RsMqTask<T>> for RedisMq<T, C>
+impl<T, Conn> Sink<RsMqTask<Vec<u8>>> for RedisMq<T, Conn>
 where
-    C::Error: std::error::Error + Send,
-    C: Codec<PrimitiveMessage<T>, Compact = Vec<u8>>,
+    Conn: Unpin + Clone + ConnectionLike + Send + 'static,
+    T: Unpin + Send + 'static,
 {
-    type Error = RsmqError;
+    type Error = Error;
 
     fn poll_ready(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         // First, try to flush any pending sends
         let this = self.get_mut();
 
+        loop {
+            match &mut this.state {
+                State::Init => {
+                    let client = this.facade.clone();
+                    let mut conn = this.connection.clone();
+                    let config = this.config.clone();
+                    this.state = State::CreateQueue(
+                        async move {
+                            let res = client
+                                .create_queue(
+                                    &mut conn,
+                                    &config.namespace,
+                                    &config.queue,
+                                    config.hidden,
+                                    config.delay,
+                                    config.maxsize,
+                                )
+                                .await;
+
+                            if let Err(Error::QueueExists) = res {
+                                return Ok(());
+                            }
+                            res
+                        }
+                        .boxed()
+                        .into(),
+                    );
+                }
+
+                State::CreateQueue(fut) => match fut.poll_unpin(cx) {
+                    Poll::Pending => return Poll::Pending,
+                    Poll::Ready(Err(e)) => {
+                        return Poll::Ready(Err(e));
+                    }
+                    Poll::Ready(Ok(_)) => {
+                        this.state = State::Running(None);
+                    }
+                },
+
+                State::Running(_) => break,
+            }
+        }
+
         // Poll pending sends
         while let Some(pending) = this.sink.pending_sends.front_mut() {
-            match pending.future.as_mut().poll(cx) {
+            match pending.poll_unpin(cx) {
                 Poll::Ready(Ok(_)) => {
                     this.sink.pending_sends.pop_front();
                 }
@@ -91,38 +119,54 @@ where
         Poll::Ready(Ok(()))
     }
 
-    fn start_send(self: Pin<&mut Self>, item: RsMqTask<T>) -> Result<(), Self::Error> {
-        let this = self.project().sink;
-        let items = this.get_mut();
-        items.items.push_back(item);
+    fn start_send(mut self: Pin<&mut Self>, item: RsMqTask<Vec<u8>>) -> Result<(), Self::Error> {
+        self.as_mut().sink.items.push_back(item);
         Ok(())
     }
 
     fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         let this = self.get_mut();
-        let namespace = this.config.namespace();
 
         // First, convert any queued items to pending sends
         while let Some(item) = this.sink.items.pop_front() {
-            let delay = delay_until(item.parts.run_at);
-            let bytes = match C::encode(&PrimitiveMessage {
-                task: item.args,
-                context: item.parts.ctx,
-            }) {
-                Ok(bytes) => bytes,
-                Err(e) => return Poll::Ready(Err(RsmqError::InvalidFormat(e.to_string()))),
-            };
-            let mut conn = this.conn.clone();
-            let namespace = namespace.to_string();
+            let delay = item.run_at().map(delay_until);
+
+            let mut headers = item.metadata().clone().into_inner();
+
+            headers.insert(
+                "core.max_attempts".to_owned(),
+                item.max_attempts().unwrap_or(25).to_string(),
+            );
+
+            headers.insert("core.status".to_owned(), item.status().to_string());
+
+            let client = this.facade.clone();
+            let message = item.args;
+            let config = this.config.clone();
+            let mut conn = this.connection.clone();
             // Create the future but don't poll it yet
-            let future =
-                async move { conn.send_message(&namespace, bytes, Some(delay)).await }.boxed();
-            this.sink.pending_sends.push_back(PendingSend { future });
+            let future = async move {
+                client
+                    .send_message(
+                        &mut conn,
+                        &config.namespace,
+                        &config.queue,
+                        message,
+                        headers,
+                        config.realtime,
+                        delay,
+                    )
+                    .await?;
+                Ok(())
+            }
+            .boxed()
+            .into();
+            this.sink.pending_sends.push_back(future);
         }
 
         // Now poll all pending sends
         while let Some(pending) = this.sink.pending_sends.front_mut() {
-            match pending.future.as_mut().poll(cx) {
+            match pending.poll_unpin(cx) {
                 Poll::Ready(Ok(_)) => {
                     this.sink.pending_sends.pop_front();
                 }
@@ -145,13 +189,9 @@ where
 }
 
 fn delay_until(timestamp: u64) -> Duration {
-    let target_time = Utc.timestamp_opt(timestamp as i64, 0).unwrap();
-    let now = Utc::now();
+    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
 
-    if target_time <= now {
-        Duration::from_secs(0)
-    } else {
-        let diff = target_time - now;
-        Duration::from_secs(diff.num_seconds() as u64)
-    }
+    let target = Duration::from_secs(timestamp);
+
+    target.saturating_sub(now)
 }

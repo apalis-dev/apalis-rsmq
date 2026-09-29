@@ -6,8 +6,18 @@ permissions:
 on:
   push:
     branches: [main]
+    paths:
+      - "**/Cargo.toml"
+      - "**/Cargo.lock"
+      - "**/*.rs"
+      - "**/*.lua"
   pull_request:
     branches: [main]
+    paths:
+      - "**/Cargo.toml"
+      - "**/Cargo.lock"
+      - "**/*.rs"
+      - "**/*.lua"
 
 env:
   CARGO_TERM_COLOR: always

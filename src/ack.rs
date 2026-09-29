@@ -1,46 +1,53 @@
 use std::fmt::Debug;
 
-use crate::{RedisMq, context::RedisMqContext};
-use apalis_core::{error::BoxDynError, task::Parts, worker::ext::ack::Acknowledge};
+use crate::{RedisMq, error::Error};
+use apalis_core::{
+    error::BoxDynError,
+    task::{ExecutionContext, status::Status},
+    worker::ext::ack::Acknowledge,
+};
 use futures::{
     FutureExt,
     future::{self, BoxFuture},
 };
-use rsmq_async::{RsmqConnection, RsmqError};
+use redis::aio::ConnectionLike;
 
-impl<T, C, Res> Acknowledge<Res, RedisMqContext, String> for RedisMq<T, C>
+impl<T, Conn, Res> Acknowledge<Res> for RedisMq<T, Conn>
 where
-    T: Send,
+    T: Send + 'static,
     Res: Debug + Send + Sync,
-    C: Send,
+    Conn: Send + Clone + ConnectionLike + 'static,
 {
-    type Error = RsmqError;
+    type Error = Error;
 
     type Future = BoxFuture<'static, Result<(), Self::Error>>;
 
-    fn ack(
-        &mut self,
-        res: &Result<Res, BoxDynError>,
-        parts: &Parts<RedisMqContext, String>,
-    ) -> Self::Future {
-        if res.is_ok() || parts.attempt.current() >= parts.ctx.max_attempts() {
-            let task_id = parts.task_id.as_ref().unwrap().inner().to_owned();
-            let namespace = self.config.namespace().to_owned();
-            let mut conn = self.conn.clone();
+    fn ack(&mut self, _res: &Result<Res, BoxDynError>, ctx: &ExecutionContext) -> Self::Future {
+        match ctx.status() {
+            Status::Done | Status::Killed => {
+                let task_id = ctx.task_id().as_ref().unwrap().to_string();
+                let queue = self.config.queue.to_owned();
+                let namespace = self.config.namespace.to_owned();
+                let client = self.facade.clone();
+                let mut conn = self.connection.clone();
 
-            let fut = async move {
-                conn.delete_message(&namespace, &task_id)
-                    .map(move |r| match r {
-                        Err(e) => Err(e),
-                        Ok(true) => Ok(()),
-                        Ok(false) => {
-                            Err(RsmqError::MissingParameter("TaskId not found".to_owned()))
-                        }
-                    })
-                    .await?;
-                Ok(())
-            };
-            return fut.boxed();
+                let fut = async move {
+                    client
+                        .delete_message(&mut conn, &namespace, &queue, &task_id)
+                        .map(move |r| match r {
+                            Err(e) => Err(e),
+                            Ok(true) => Ok(()),
+                            Ok(false) => Err(Error::InvalidValue("TaskIdInvalid")),
+                        })
+                        .await?;
+                    Ok(())
+                };
+                return fut.boxed();
+            }
+            Status::Failed => {
+                // TODO: update the attempts in metadata? t
+            }
+            _ => unreachable!(),
         }
         future::ready(Ok(())).boxed()
     }
