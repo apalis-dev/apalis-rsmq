@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- *bump*: to v0.1.0 ([#11](https://github.com/apalis-dev/apalis-rsmq/pull/11))
 - *fix*: ensure ci is callable during release ([#9](https://github.com/apalis-dev/apalis-rsmq/pull/9))
 - ci(deps): bump actions/cache from 4 to 6 ([#5](https://github.com/apalis-dev/apalis-rsmq/pull/5))
 - ci(deps): bump codecov/codecov-action from 5 to 7 ([#4](https://github.com/apalis-dev/apalis-rsmq/pull/4))
