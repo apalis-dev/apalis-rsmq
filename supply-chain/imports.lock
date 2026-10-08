@@ -4,3 +4,7 @@
 [[unpublished.apalis-rsmq]]
 version = "0.1.0-rc.1"
 audited_as = "0.1.0-alpha.1"
+
+[[unpublished.apalis-rsmq]]
+version = "0.1.0"
+audited_as = "0.1.0-rc.1"
