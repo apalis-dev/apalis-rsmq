@@ -19,9 +19,20 @@ dependencies = [
 
 [[package]]
 name = "apalis-codec"
-version = "0.1.0-rc.11"
+version = "0.1.0-rc.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6256b897e40ba6c99f137a331ff8af7811ff5a2fe5439c337b26df68e970f561"
+checksum = "3e282ad743419920bffe532bc19b49352b805be0f0d234b169fc03b022ca745c"
+dependencies = [
+ "apalis-core",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "apalis-codec"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a2c9719cf1d2726f04dfa1d52076e9d1f198e2a226c1be07d0b6cfbc235bc609"
 dependencies = [
  "apalis-core",
  "serde",
@@ -30,9 +41,9 @@ dependencies = [
 
 [[package]]
 name = "apalis-core"
-version = "1.0.0-rc.11"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f495fd1d64babf4d77d7f9caa167d0c807e3213af3e0513b8d42d07e6b4e3b88"
+checksum = "93a749c6487cede1a1ca503997f59fca75aeca305fcbf555d5a13606b1c7ecb1"
 dependencies = [
  "dashmap",
  "futures-channel",
@@ -56,7 +67,7 @@ name = "apalis-rsmq"
 version = "0.1.0"
 dependencies = [
  "apalis",
- "apalis-codec",
+ "apalis-codec 1.0.0",
  "apalis-core",
  "apalis-workflow",
  "futures",
@@ -78,7 +89,7 @@ version = "0.1.0-rc.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1622bd2b7cac4617b075007a27839d38efb10cf3acb4ec53edefd7dcc68ef97e"
 dependencies = [
- "apalis-codec",
+ "apalis-codec 0.1.0-rc.12",
  "apalis-core",
  "dashmap",
  "futures-channel",
@@ -1164,9 +1175,9 @@ checksum = "b6c140620e7ffbb22c2dee59cafe6084a59b5ffc27a8859a5f0d494b5d52b6be"
 
 [[package]]
 name = "uuid"
-version = "1.27.0"
+version = "1.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "97277d36b9c3ace13e58fa6e753f8b0bbbf302a18dd193240d70f9e29681059a"
+checksum = "7cc1186384beb7dd8eedea376413fd654937285ea6c9cfbb928dc3043ea4b606"
 dependencies = [
  "getrandom",
  "js-sys",
