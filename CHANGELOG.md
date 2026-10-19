@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- deps(deps): bump apalis-core from 1.0.0-rc.11 to 1.0.0 ([#13](https://github.com/apalis-dev/apalis-rsmq/pull/13))
 ## [0.1.0] - 2026-10-08
 
 - *bump*: to v0.1.0 ([#11](https://github.com/apalis-dev/apalis-rsmq/pull/11))
