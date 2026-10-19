@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- deps(deps): bump tokio from 1.53.2 to 1.53.3 ([#16](https://github.com/apalis-dev/apalis-rsmq/pull/16))
 ## [0.1.0] - 2026-10-08
 
 - *bump*: to v0.1.0 ([#11](https://github.com/apalis-dev/apalis-rsmq/pull/11))
