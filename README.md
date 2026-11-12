@@ -20,8 +20,8 @@ Because RSMQ is a lightweight Redis-based protocol with clients in many language
 
 ```toml
 [dependencies]
-apalis-rsmq = "0.1.0-rc.1"
-apalis = "1.0.0-rc.10"
+apalis-rsmq = "0.2"
+apalis = "1"
 serde = { version = "1.0", features = ["derive"] }
 futures = "0.3"
 tracing = "0.1"
