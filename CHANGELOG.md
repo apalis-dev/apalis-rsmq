@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- chore: add auto-release and auto-changelog scripts ([#18](https://github.com/apalis-dev/apalis-rsmq/pull/18))
+
 ## [0.1.0] - 2026-10-08
 
 - *bump*: to v0.1.0 ([#11](https://github.com/apalis-dev/apalis-rsmq/pull/11))
