@@ -8,15 +8,15 @@ version = "0.10"
 audit-as-crates-io = true
 
 [[exemptions.apalis]]
-version = "1.1.1"
+version = "1.2.0"
 criteria = "safe-to-run"
 
 [[exemptions.apalis-codec]]
-version = "1.1.1"
+version = "1.2.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.apalis-core]]
-version = "1.1.1"
+version = "1.2.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.apalis-rsmq]]
@@ -24,7 +24,7 @@ version = "0.1.0-alpha.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.apalis-workflow]]
-version = "1.1.1"
+version = "1.2.0"
 criteria = "safe-to-run"
 
 [[exemptions.arc-swap]]
@@ -52,11 +52,11 @@ version = "2.13.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.bumpalo]]
-version = "3.20.3"
+version = "3.20.4"
 criteria = "safe-to-deploy"
 
 [[exemptions.bytes]]
-version = "1.12.1"
+version = "1.12.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.cfg-if]]
@@ -116,7 +116,7 @@ version = "0.1.5"
 criteria = "safe-to-run"
 
 [[exemptions.form_urlencoded]]
-version = "1.2.2"
+version = "1.2.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.futures]]
@@ -172,7 +172,7 @@ version = "0.15.5"
 criteria = "safe-to-run"
 
 [[exemptions.hashbrown]]
-version = "0.17.1"
+version = "0.17.2"
 criteria = "safe-to-run"
 
 [[exemptions.icu_collections]]
@@ -248,7 +248,7 @@ version = "2.8.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.mio]]
-version = "1.2.4"
+version = "1.2.5"
 criteria = "safe-to-deploy"
 
 [[exemptions.nu-ansi-term]]
@@ -280,15 +280,15 @@ version = "0.8.3"
 criteria = "safe-to-run"
 
 [[exemptions.pin-project]]
-version = "1.1.13"
+version = "1.2.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.pin-project-internal]]
-version = "1.1.13"
+version = "1.2.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.pin-project-lite]]
-version = "0.2.17"
+version = "0.2.18"
 criteria = "safe-to-deploy"
 
 [[exemptions.portable-atomic]]
@@ -316,7 +316,7 @@ version = "1.0.0"
 criteria = "safe-to-run"
 
 [[exemptions.rand]]
-version = "0.10.3"
+version = "0.10.4"
 criteria = "safe-to-deploy"
 
 [[exemptions.rand_core]]
@@ -324,7 +324,7 @@ version = "0.10.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.redis]]
-version = "1.8.1"
+version = "1.8.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.redox_syscall]]
@@ -380,7 +380,7 @@ version = "0.4.12"
 criteria = "safe-to-deploy"
 
 [[exemptions.smallvec]]
-version = "1.16.5"
+version = "1.16.6"
 criteria = "safe-to-deploy"
 
 [[exemptions.socket2]]
@@ -476,7 +476,7 @@ version = "1.0.27"
 criteria = "safe-to-deploy"
 
 [[exemptions.url]]
-version = "2.5.8"
+version = "2.5.9"
 criteria = "safe-to-deploy"
 
 [[exemptions.utf8_iter]]
@@ -488,7 +488,7 @@ version = "1.0.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.uuid]]
-version = "1.29.2"
+version = "1.29.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.valuable]]
@@ -532,7 +532,7 @@ version = "0.6.4"
 criteria = "safe-to-deploy"
 
 [[exemptions.xxhash-rust]]
-version = "0.8.19"
+version = "0.8.21"
 criteria = "safe-to-deploy"
 
 [[exemptions.yoke]]
